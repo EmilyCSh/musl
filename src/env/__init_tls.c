@@ -97,9 +97,7 @@ static void static_init_tls(size_t *aux)
 			tls_phdr = phdr;
 		if (phdr->p_type == PT_GNU_STACK &&
 		    phdr->p_memsz > __default_stacksize)
-			__default_stacksize =
-				phdr->p_memsz < DEFAULT_STACK_MAX ?
-				phdr->p_memsz : DEFAULT_STACK_MAX;
+			__default_stacksize = phdr->p_memsz;
 	}
 
 	if (tls_phdr) {

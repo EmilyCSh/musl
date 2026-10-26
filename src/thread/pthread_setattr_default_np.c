@@ -14,7 +14,7 @@ int pthread_setattr_default_np(const pthread_attr_t *attrp)
 	if (memcmp(&tmp, &zero, sizeof tmp))
 		return EINVAL;
 
-	unsigned stack = MIN(attrp->_a_stacksize, DEFAULT_STACK_MAX);
+	size_t stack = attrp->_a_stacksize;
 	unsigned guard = MIN(attrp->_a_guardsize, DEFAULT_GUARD_MAX);
 
 	__inhibit_ptc();

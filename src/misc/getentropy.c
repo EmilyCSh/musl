@@ -22,6 +22,13 @@ int getentropy(void *buffer, size_t len)
 			if (errno == EINTR) continue;
 			else break;
 		}
+
+		if (!ret) {
+			errno = EIO;
+			ret = -1;
+			break;
+		}
+		
 		pos += ret;
 		len -= ret;
 		ret = 0;

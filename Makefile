@@ -132,6 +132,7 @@ $(CRT_OBJS): CFLAGS_ALL += -DCRT
 $(LOBJS) $(LDSO_OBJS): CFLAGS_ALL += -fPIC
 
 CC_CMD = $(CC) $(CFLAGS_ALL) -c -o $@ $<
+CONFIG_DEP = $(wildcard config.mak)
 
 # Choose invocation of assembler to be used
 ifeq ($(ADD_CFI),yes)
@@ -140,22 +141,22 @@ else
 	AS_CMD = $(CC_CMD)
 endif
 
-obj/%.o: $(srcdir)/%.s
+obj/%.o: $(srcdir)/%.s $(CONFIG_DEP)
 	$(AS_CMD)
 
-obj/%.o: $(srcdir)/%.S
+obj/%.o: $(srcdir)/%.S $(CONFIG_DEP)
 	$(CC_CMD)
 
-obj/%.o: $(srcdir)/%.c $(GENH) $(IMPH)
+obj/%.o: $(srcdir)/%.c $(GENH) $(IMPH) $(CONFIG_DEP)
 	$(CC_CMD)
 
-obj/%.lo: $(srcdir)/%.s
+obj/%.lo: $(srcdir)/%.s $(CONFIG_DEP)
 	$(AS_CMD)
 
-obj/%.lo: $(srcdir)/%.S
+obj/%.lo: $(srcdir)/%.S $(CONFIG_DEP)
 	$(CC_CMD)
 
-obj/%.lo: $(srcdir)/%.c $(GENH) $(IMPH)
+obj/%.lo: $(srcdir)/%.c $(GENH) $(IMPH) $(CONFIG_DEP)
 	$(CC_CMD)
 
 lib/libc.so: $(LOBJS) $(LDSO_OBJS)

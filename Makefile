@@ -78,6 +78,26 @@ LDSO_PATHNAME = $(syslibdir)/ld-musl-$(ARCH)$(SUBARCH).so.1
 -include config.mak
 -include $(srcdir)/arch/$(ARCH)/arch.mak
 
+ifeq ($(WITH_LIBXCRYPT),yes)
+AOBJS := $(filter-out obj/src/crypt/crypt.o obj/src/crypt/crypt_r.o obj/src/crypt/encrypt.o obj/src/crypt/setkey.o obj/src/crypt/crypt.lo obj/src/crypt/crypt_r.lo obj/src/crypt/encrypt.lo obj/src/crypt/setkey.lo,$(AOBJS)) obj/libxcrypt/libxcrypt.o
+LOBJS := $(filter-out obj/src/crypt/crypt.lo obj/src/crypt/crypt_r.lo obj/src/crypt/encrypt.lo obj/src/crypt/setkey.lo,$(LOBJS)) obj/libxcrypt/libxcrypt.o
+
+LIBXCRYPT_SRC = $(srcdir)/libxcrypt
+LIBXCRYPT_BUILD = obj/libxcrypt
+LIBXCRYPT_CPPFLAGS = -I$(abspath obj/include) \
+	-I$(abspath $(srcdir)/arch/$(ARCH)) \
+	-I$(abspath $(srcdir)/arch/generic) \
+	-I$(abspath $(srcdir)/include)
+LIBXCRYPT_CONFIGURE = \
+	$(abspath $(LIBXCRYPT_SRC))/configure \
+	CC="$(CC)" AR="$(AR)" RANLIB="$(RANLIB)" \
+	CPPFLAGS="$(LIBXCRYPT_CPPFLAGS)" \
+	CFLAGS="$(CFLAGS) -std=c99 -fPIC" \
+	--disable-werror --disable-static --enable-shared \
+	--enable-hashes=strong,glibc \
+	--enable-obsolete-api=glibc --disable-failure-tokens
+endif
+
 ifeq ($(ARCH),)
 
 all:
@@ -159,6 +179,20 @@ obj/%.lo: $(srcdir)/%.S $(CONFIG_DEP)
 obj/%.lo: $(srcdir)/%.c $(GENH) $(IMPH) $(CONFIG_DEP)
 	$(CC_CMD)
 
+ifeq ($(WITH_LIBXCRYPT),yes)
+
+obj/libxcrypt/build.stamp: $(GENH) $(CONFIG_DEP) $(LIBXCRYPT_SRC)/configure.ac $(LIBXCRYPT_SRC)/Makefile.am $(wildcard $(LIBXCRYPT_SRC)/lib/*.c)
+	cd $(LIBXCRYPT_SRC) && autoreconf -fi
+	mkdir -p $(LIBXCRYPT_BUILD)
+	cd $(LIBXCRYPT_BUILD) && $(LIBXCRYPT_CONFIGURE)
+	rm -f $(LIBXCRYPT_BUILD)/crypt-symbol-vers.h $(LIBXCRYPT_BUILD)/crypt-symbol-vers.h.stamp
+	$(MAKE) -C $(LIBXCRYPT_BUILD) APPLY_SYMVERS=no libcrypt.la
+	touch $@
+
+obj/libxcrypt/libxcrypt.o: $(LIBXCRYPT_BUILD)/build.stamp
+	$(CC) -r -o $@ $(LIBXCRYPT_BUILD)/lib/.libs/libcrypt_la-*.o
+endif
+
 lib/libc.so: $(LOBJS) $(LDSO_OBJS)
 	$(CC) $(CFLAGS_ALL) $(LDFLAGS_ALL) -nostdlib -shared \
 	-Wl,-e,_dlstart -o $@ $(LOBJS) $(LDSO_OBJS) $(LIBCC)
@@ -206,6 +240,17 @@ $(DESTDIR)$(includedir)/bits/%: $(srcdir)/arch/generic/bits/%
 
 $(DESTDIR)$(includedir)/bits/%: obj/include/bits/%
 	$(INSTALL) -D -m 644 $< $@
+
+ifeq ($(WITH_LIBXCRYPT),yes)
+obj/include/crypt.h: obj/libxcrypt/build.stamp
+	cp obj/libxcrypt/crypt.h $@
+
+$(DESTDIR)$(includedir)/crypt.h: obj/include/crypt.h
+	$(INSTALL) -D -m 644 $< $@
+else
+$(DESTDIR)$(includedir)/crypt.h: $(srcdir)/include/crypt.h
+	$(INSTALL) -D -m 644 $< $@
+endif
 
 $(DESTDIR)$(includedir)/%: $(srcdir)/include/%
 	$(INSTALL) -D -m 644 $< $@

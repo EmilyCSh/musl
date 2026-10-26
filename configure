@@ -37,6 +37,8 @@ Optional features:
 
 Optional packages:
   --with-malloc=...       choose malloc implementation [mallocng]
+  --with-libxcrypt        use libxcrypt for password hashing [enabled]
+  --without-libxcrypt     use the built-in musl crypt implementation
 
 Some influential environment variables:
   CC                      C compiler command [detected]
@@ -143,6 +145,7 @@ wrapper=auto
 gcc_wrapper=no
 clang_wrapper=no
 malloc_dir=mallocng
+libxcrypt=yes
 
 for arg ; do
 case "$arg" in
@@ -173,6 +176,8 @@ case "$arg" in
 --enable-gcc-wrapper|--enable-gcc-wrapper=yes) wrapper=yes ; gcc_wrapper=yes ;;
 --disable-gcc-wrapper|--enable-gcc-wrapper=no) wrapper=no ;;
 --with-malloc=*) malloc_dir=${arg#*=} ;;
+--with-libxcrypt) libxcrypt=yes ;;
+--without-libxcrypt) libxcrypt=no ;;
 --enable-*|--disable-*|--with-*|--without-*|--*dir=*) ;;
 --host=*|--target=*) target=${arg#*=} ;;
 --build=*) build=${arg#*=} ;;
@@ -831,6 +836,7 @@ TOOL_LIBS = $tool_libs
 ADD_CFI = $ADD_CFI
 MALLOC_DIR = $malloc_dir
 COMPAT_SRC_DIRS = compat
+WITH_LIBXCRYPT = $libxcrypt
 EOF
 test "x$static" = xno && echo "STATIC_LIBS ="
 test "x$shared" = xno && echo "SHARED_LIBS ="

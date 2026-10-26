@@ -88,6 +88,11 @@ size_t strlcpy (char *, const char *, size_t);
 void explicit_bzero (void *, size_t);
 #endif
 
+#if defined(_GNU_SOURCE) || defined(_BSD_SOURCE) \
+ || (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L)
+void *memset_explicit (void *, int, size_t);
+#endif
+
 #ifdef _GNU_SOURCE
 #define	strdupa(x)	strcpy(alloca(strlen(x)+1),x)
 int strverscmp (const char *, const char *);

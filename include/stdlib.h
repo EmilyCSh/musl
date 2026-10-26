@@ -136,6 +136,14 @@ unsigned short *seed48 (unsigned short [3]);
 void lcong48 (unsigned short [7]);
 #endif
 
+#if defined(_GNU_SOURCE) || defined(_BSD_SOURCE) \
+ || (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L)
+#include <stdint.h>
+uint32_t arc4random (void);
+void arc4random_buf (void *, size_t);
+uint32_t arc4random_uniform (uint32_t);
+#endif
+
 #if defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
 #include <alloca.h>
 char *mktemp (char *);

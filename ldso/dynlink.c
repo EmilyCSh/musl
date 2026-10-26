@@ -733,9 +733,7 @@ static void *map_library(int fd, struct dso *dso)
 			dso->relro_end = (ph->p_vaddr + ph->p_memsz) & -PAGE_SIZE;
 		} else if (ph->p_type == PT_GNU_STACK) {
 			if (!runtime && ph->p_memsz > __default_stacksize) {
-				__default_stacksize =
-					ph->p_memsz < DEFAULT_STACK_MAX ?
-					ph->p_memsz : DEFAULT_STACK_MAX;
+				__default_stacksize = ph->p_memsz;
 			}
 		}
 		if (ph->p_type != PT_LOAD) continue;
@@ -1446,9 +1444,7 @@ static void kernel_mapped_dso(struct dso *p)
 			p->relro_end = (ph->p_vaddr + ph->p_memsz) & -PAGE_SIZE;
 		} else if (ph->p_type == PT_GNU_STACK) {
 			if (!runtime && ph->p_memsz > __default_stacksize) {
-				__default_stacksize =
-					ph->p_memsz < DEFAULT_STACK_MAX ?
-					ph->p_memsz : DEFAULT_STACK_MAX;
+				__default_stacksize = ph->p_memsz;
 			}
 		}
 		if (ph->p_type != PT_LOAD) continue;

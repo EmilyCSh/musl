@@ -2,11 +2,15 @@
 
 int pthread_attr_setstack(pthread_attr_t *a, void *addr, size_t size)
 {
-	if (__pthread_attr_clamp_stacksize(size) != size) {
+	if (size < PTHREAD_STACK_MIN) {
 		return EINVAL;
 	}
 
-	a->_a_stackaddr = (size_t)addr + size;
+	if (size > UINTPTR_MAX - ((uintptr_t) addr)) {
+		return EINVAL;
+	}
+
+	a->_a_stackaddr = (size_t) addr + size;
 	a->_a_stacksize = size;
 	return 0;
 }

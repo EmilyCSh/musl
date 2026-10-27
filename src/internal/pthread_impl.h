@@ -205,19 +205,6 @@ extern hidden unsigned __default_guardsize;
 
 #define __ATTRP_C11_THREAD ((void*)(uintptr_t)-1)
 
-static inline size_t __pthread_attr_clamp_stacksize(size_t size)
-{
-	if (size < PTHREAD_STACK_MIN) {
-		size = PTHREAD_STACK_MIN;
-	}
-
-	if (size - PTHREAD_STACK_MIN > SIZE_MAX/4) {
-		size = SIZE_MAX/4 + PTHREAD_STACK_MIN;
-	}
-
-	return size;
-}
-
 static inline void __init_rlimit_stacksize()
 {
 	struct rlimit rlimit;
@@ -246,7 +233,9 @@ static inline void __init_default_stacksize()
 		__default_stacksize = DEFAULT_STACK_SIZE;
 	}
 
-	__default_stacksize = __pthread_attr_clamp_stacksize(__default_stacksize);
+	if (__default_stacksize < PTHREAD_STACK_MIN) {
+		__default_stacksize = PTHREAD_STACK_MIN;
+	}
 }
 
 #endif

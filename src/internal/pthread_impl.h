@@ -5,6 +5,7 @@
 #include <signal.h>
 #include <errno.h>
 #include <limits.h>
+#include <sys/resource.h>
 #include <sys/mman.h>
 #include "libc.h"
 #include "syscall.h"
@@ -191,6 +192,9 @@ extern hidden volatile int __thread_list_lock;
 
 extern hidden volatile int __abort_lock[1];
 
+extern hidden size_t __pt_gnu_stacksize;
+extern hidden size_t __rlimit_stacksize;
+extern hidden size_t __user_defined_default_stacksize;
 extern hidden size_t __default_stacksize;
 extern hidden unsigned __default_guardsize;
 
@@ -200,5 +204,49 @@ extern hidden unsigned __default_guardsize;
 #define DEFAULT_GUARD_MAX (1<<20)
 
 #define __ATTRP_C11_THREAD ((void*)(uintptr_t)-1)
+
+static inline size_t __pthread_attr_clamp_stacksize(size_t size)
+{
+	if (size < PTHREAD_STACK_MIN) {
+		size = PTHREAD_STACK_MIN;
+	}
+
+	if (size - PTHREAD_STACK_MIN > SIZE_MAX/4) {
+		size = SIZE_MAX/4 + PTHREAD_STACK_MIN;
+	}
+
+	return size;
+}
+
+static inline void __init_rlimit_stacksize()
+{
+	struct rlimit rlimit;
+	if (!getrlimit(RLIMIT_STACK, &rlimit)) {
+		if (rlimit.rlim_cur == RLIM_INFINITY) {
+			__rlimit_stacksize = DEFAULT_STACK_SIZE;
+		} else {
+			if (rlimit.rlim_cur >= SIZE_MAX) {
+				__rlimit_stacksize = SIZE_MAX;
+			} else {
+				__rlimit_stacksize = rlimit.rlim_cur;
+			}
+		}
+	}
+}
+
+static inline void __init_default_stacksize()
+{
+	if (__user_defined_default_stacksize > 0) {
+		__default_stacksize = __user_defined_default_stacksize;
+	} else if (__rlimit_stacksize > 0) {
+		__default_stacksize = __rlimit_stacksize;
+	} else if (__pt_gnu_stacksize > 0) {
+		__default_stacksize = __pt_gnu_stacksize;
+	} else {
+		__default_stacksize = DEFAULT_STACK_SIZE;
+	}
+
+	__default_stacksize = __pthread_attr_clamp_stacksize(__default_stacksize);
+}
 
 #endif

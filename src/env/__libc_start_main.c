@@ -6,6 +6,7 @@
 #include "syscall.h"
 #include "atomic.h"
 #include "libc.h"
+#include "pthread_impl.h"
 
 static void dummy(void) {}
 weak_alias(dummy, _init);
@@ -37,6 +38,8 @@ void __init_libc(char **envp, char *pn)
 	for (i=0; pn[i]; i++) if (pn[i]=='/') __progname = pn+i+1;
 
 	__init_tls(aux);
+	__init_rlimit_stacksize();
+	__init_default_stacksize();
 	__init_ssp((void *)aux[AT_RANDOM]);
 
 	if (aux[AT_UID]==aux[AT_EUID] && aux[AT_GID]==aux[AT_EGID]

@@ -198,7 +198,7 @@ extern hidden size_t __user_defined_default_stacksize;
 extern hidden size_t __default_stacksize;
 extern hidden unsigned __default_guardsize;
 
-#define DEFAULT_STACK_SIZE 131072
+#define DEFAULT_STACK_SIZE (2<<20)
 #define DEFAULT_GUARD_SIZE 8192
 
 #define DEFAULT_GUARD_MAX (1<<20)

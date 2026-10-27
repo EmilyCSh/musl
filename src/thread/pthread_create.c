@@ -216,7 +216,25 @@ static int start_c11(void *p)
 	return 0;
 }
 
-#define ROUND(x) (((x)+PAGE_SIZE-1)&-PAGE_SIZE)
+static int add_size(size_t a, size_t b, size_t *sum)
+{
+	if (a > SIZE_MAX - b) {
+		return -1;
+	}
+
+	*sum = a+b;
+	return 0;
+}
+
+static int round_size(size_t size, size_t *rounded)
+{
+	if (size > SIZE_MAX-(PAGE_SIZE-1)) {
+		return -1;
+	}
+
+	*rounded = (size + PAGE_SIZE-1) & -PAGE_SIZE;
+	return 0;
+}
 
 /* pthread_key_create.c overrides this */
 static volatile size_t dummy = 0;
@@ -268,26 +286,33 @@ int __pthread_create(pthread_t *restrict res, const pthread_attr_t *restrict att
 		attr._a_guardsize = __default_guardsize;
 	}
 
+	size_t need;
+	if (add_size(libc.tls_size, __pthread_tsd_size, &need)) {
+		goto fail;
+	}
+
 	if (attr._a_stackaddr) {
-		size_t need = libc.tls_size + __pthread_tsd_size;
 		size = attr._a_stacksize;
 		stack = (void *)(attr._a_stackaddr & -16);
 		stack_limit = (void *)(attr._a_stackaddr - size);
-		/* Use application-provided stack for TLS only when
-		 * it does not take more than ~12% or 2k of the
-		 * application's stack space. */
+		/* Use the application-provided stack for TLS only when the
+		 * TLS/TSD overhead is less than one eighth of the stack and 2 KiB. */
 		if (need < size/8 && need < 2048) {
 			tsd = stack - __pthread_tsd_size;
 			stack = tsd - libc.tls_size;
 			memset(stack, 0, need);
-		} else {
-			size = ROUND(need);
+		} else if (round_size(need, &size)) {
+			goto fail;
 		}
+
 		guard = 0;
 	} else {
-		guard = ROUND(attr._a_guardsize);
-		size = guard + ROUND(attr._a_stacksize
-			+ libc.tls_size +  __pthread_tsd_size);
+		if (round_size(attr._a_guardsize, &guard)
+		    || add_size(attr._a_stacksize, need, &size)
+		    || round_size(size, &size)
+		    || add_size(guard, size, &size)) {
+			goto fail;
+		}
 	}
 
 	if (!tsd) {

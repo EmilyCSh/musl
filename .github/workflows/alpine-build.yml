@@ -1,0 +1,106 @@
+name: Alpine build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: ${{ matrix.arch }} / ${{ matrix.compiler }} / ${{ matrix.configuration.name }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        arch:
+          - x86_64
+          - aarch64
+        include:
+          - arch: x86_64
+            runner: ubuntu-24.04
+          - arch: aarch64
+            runner: ubuntu-24.04-arm
+        compiler:
+          - gcc
+          - clang-23
+        configuration:
+          - name: defaults
+            args: ""
+          - name: optimize-disabled
+            args: --disable-optimize
+          - name: optimize-enabled
+            args: --enable-optimize
+          - name: optimize-size
+            args: --enable-optimize=size
+          - name: optimize-components
+            args: --enable-optimize=internal,malloc,string
+          - name: builtin-crypt
+            args: --without-libxcrypt
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Build in Alpine
+        env:
+          CC: ${{ matrix.compiler }}
+          MUSL_ARCH: ${{ matrix.arch }}
+          CONFIGURE_ARGS: ${{ matrix.configuration.args }}
+        run: |
+          docker run --rm \
+            --volume "$GITHUB_WORKSPACE:/src" \
+            --workdir /src \
+            --env CC \
+            --env MUSL_ARCH \
+            --env CONFIGURE_ARGS \
+            alpine:edge \
+            sh -ec '
+              apk add --no-cache \
+                build-base \
+                clang23 \
+                autoconf \
+                automake \
+                bash \
+                libtool \
+                pkgconf \
+                linux-headers \
+                su-exec
+
+              CC="$CC" ./configure \
+                --prefix=/tmp/musl \
+                --syslibdir=/tmp/musl/lib \
+                --disable-wrapper \
+                $CONFIGURE_ARGS
+
+              make -j"$(nproc)"
+              make install
+
+              TEST_CC="$CC \
+                -nostdinc \
+                -isystem /tmp/musl/include \
+                -isystem /usr/include \
+                -B/tmp/musl/lib"
+              TEST_LDFLAGS="-g \
+                -L/tmp/musl/lib \
+                -Wl,--dynamic-linker,/tmp/musl/lib/ld-musl-$MUSL_ARCH.so.1"
+              TEST_LDLIBS="src/common/libtest.a"
+
+              make -C libc-test cleanall
+              ln -sf /bin/bash /bin/sh
+              chown -R nobody:nobody libc-test
+              if ! su-exec nobody env LD_LIBRARY_PATH=/tmp/musl/lib make -C libc-test \
+                CC="$TEST_CC" \
+                LDFLAGS="$TEST_LDFLAGS" \
+                LDLIBS="$TEST_LDLIBS" > /tmp/libc-test.log 2>&1; then
+                cat /tmp/libc-test.log
+                exit 1
+              fi
+
+              if grep -Eq "^(FAIL|BUILDERROR) " /tmp/libc-test.log libc-test/src/REPORT; then
+                cat /tmp/libc-test.log
+                cat libc-test/src/REPORT
+                exit 1
+              fi
+
+              grep "^PASS$" /tmp/libc-test.log
+            '

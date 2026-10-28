@@ -95,7 +95,7 @@ LIBXCRYPT_CONFIGURE = \
 	CFLAGS="$(CFLAGS) -std=c99 -fPIC" \
 	--disable-werror --disable-static --enable-shared \
 	--enable-hashes=strong,glibc \
-	--enable-obsolete-api=glibc --disable-failure-tokens
+	--enable-obsolete-api=musl --disable-failure-tokens
 endif
 
 ifeq ($(ARCH),)

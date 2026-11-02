@@ -83,23 +83,14 @@ jobs:
               make -j"$(nproc)"
               make install
 
-              TEST_CC="$CC \
-                -nostdinc \
-                -isystem /tmp/musl/include \
-                -isystem /usr/include \
-                -B/tmp/musl/lib"
-              TEST_LDFLAGS="-g \
-                -L/tmp/musl/lib \
-                -Wl,--dynamic-linker,/tmp/musl/lib/ld-musl-$MUSL_ARCH.so.1"
-              TEST_LDLIBS="src/common/libtest.a"
-
               make -C libc-test cleanall
               ln -sf /bin/bash /bin/sh
               chown -R nobody:nobody libc-test
               if ! su-exec nobody env LD_LIBRARY_PATH=/tmp/musl/lib make -C libc-test \
-                CC="$TEST_CC" \
-                LDFLAGS="$TEST_LDFLAGS" \
-                LDLIBS="$TEST_LDLIBS" > /tmp/libc-test.log 2>&1; then
+                CC="$CC -isystem /tmp/musl/include -B/tmp/musl/lib" \
+                LDFLAGS="-L/tmp/musl/lib" \
+                LDFLAGS_DYNAMIC="-Wl,--dynamic-linker,/tmp/musl/lib/ld-musl-$MUSL_ARCH.so.1" \
+                > /tmp/libc-test.log 2>&1; then
                 cat /tmp/libc-test.log
                 exit 1
               fi

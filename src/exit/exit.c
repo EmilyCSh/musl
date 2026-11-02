@@ -14,6 +14,7 @@ static void dummy()
 weak_alias(dummy, __funcs_on_exit);
 weak_alias(dummy, __stdio_exit);
 weak_alias(dummy, _fini);
+weak_alias(dummy, __malloc_process_cleanup);
 
 extern weak hidden void (*const __fini_array_start)(void), (*const __fini_array_end)(void);
 
@@ -42,6 +43,7 @@ _Noreturn void exit(int code)
 
 	__funcs_on_exit();
 	__libc_exit_fini();
+	__malloc_process_cleanup();
 	__stdio_exit();
 	_Exit(code);
 }

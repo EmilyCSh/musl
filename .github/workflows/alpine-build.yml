@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    name: ${{ matrix.arch }} / ${{ matrix.compiler }} / ${{ matrix.configuration.name }}
+    name: ${{ matrix.arch }} / ${{ matrix.compiler }} / ${{ matrix.allocator.name }} / ${{ matrix.configuration.name }}
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
@@ -23,6 +23,11 @@ jobs:
         compiler:
           - gcc
           - clang-23
+        allocator:
+          - name: mimalloc
+            args: ""
+          - name: mallocng
+            args: --with-malloc=mallocng
         configuration:
           - name: defaults
             args: ""
@@ -46,6 +51,7 @@ jobs:
           CC: ${{ matrix.compiler }}
           MUSL_ARCH: ${{ matrix.arch }}
           CONFIGURE_ARGS: ${{ matrix.configuration.args }}
+          MALLOC_ARGS: ${{ matrix.allocator.args }}
         run: |
           docker run --rm \
             --volume "$GITHUB_WORKSPACE:/src" \
@@ -53,6 +59,7 @@ jobs:
             --env CC \
             --env MUSL_ARCH \
             --env CONFIGURE_ARGS \
+            --env MALLOC_ARGS \
             alpine:edge \
             sh -ec '
               apk add --no-cache \
@@ -70,7 +77,8 @@ jobs:
                 --prefix=/tmp/musl \
                 --syslibdir=/tmp/musl/lib \
                 --disable-wrapper \
-                $CONFIGURE_ARGS
+                $CONFIGURE_ARGS \
+                $MALLOC_ARGS
 
               make -j"$(nproc)"
               make install

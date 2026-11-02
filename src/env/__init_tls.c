@@ -11,6 +11,9 @@
 
 volatile int __thread_list_lock;
 
+static void dummy(void) {}
+weak_alias(dummy, __malloc_init);
+
 int __init_tp(void *p)
 {
 	pthread_t td = p;
@@ -146,6 +149,7 @@ static void static_init_tls(size_t *aux)
 	/* Failure to initialize thread pointer is always fatal. */
 	if (__init_tp(__copy_tls(mem)) < 0)
 		a_crash();
+	__malloc_init();
 }
 
 weak_alias(static_init_tls, __init_tls);

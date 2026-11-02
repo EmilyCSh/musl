@@ -12,6 +12,7 @@ hidden void __qsort_r (void *, size_t, size_t, int (*)(const void *, const void 
 
 hidden void *__libc_malloc(size_t);
 hidden void *__libc_malloc_impl(size_t);
+hidden void *__malloc_default(size_t);
 hidden void *__libc_calloc(size_t, size_t);
 hidden void *__libc_realloc(void *, size_t);
 hidden void __libc_free(void *);

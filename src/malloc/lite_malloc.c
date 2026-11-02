@@ -103,16 +103,18 @@ static void *__simple_malloc(size_t n)
 	return p;
 }
 
+#ifndef LIBC_CALLOC_EXTERNAL
 weak_alias(__simple_malloc, __libc_malloc_impl);
+#endif
 
 void *__libc_malloc(size_t n)
 {
 	return __libc_malloc_impl(n);
 }
 
-static void *default_malloc(size_t n)
+void *__malloc_default(size_t n)
 {
 	return __libc_malloc_impl(n);
 }
 
-weak_alias(default_malloc, malloc);
+weak_alias(__malloc_default, malloc);

@@ -4,3 +4,6 @@
 [submodule "libc-test"]
 	path = libc-test
 	url = https://github.com/EmilyCSh/libc-test.git
+[submodule "mimalloc"]
+	path = src/malloc/mimalloc/mimalloc-impl
+	url = https://github.com/EmilyCSh/mimalloc.git

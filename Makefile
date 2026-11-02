@@ -151,6 +151,33 @@ $(CRT_OBJS): CFLAGS_ALL += -DCRT
 
 $(LOBJS) $(LDSO_OBJS): CFLAGS_ALL += -fPIC
 
+ifeq ($(MALLOC_DIR),mimalloc)
+MIMALLOC_DIR = $(srcdir)/src/malloc/mimalloc/mimalloc-impl
+MIMALLOC_DEPS = $(shell find $(MIMALLOC_DIR)/include $(MIMALLOC_DIR)/src -name '*.[ch]')
+MIMALLOC_CFLAGS = -I$(MIMALLOC_DIR)/include -isystem $(shell $(CC) -print-file-name=include) -std=gnu11 -fvisibility=hidden -DMI_LIBC_MUSL=1 -DMI_BUILD_RELEASE=1
+obj/src/malloc/mimalloc/malloc.o: CFLAGS_ALL += $(MIMALLOC_CFLAGS)
+obj/src/malloc/mimalloc/malloc.lo: CFLAGS_ALL += $(MIMALLOC_CFLAGS)
+obj/src/malloc/calloc.o obj/src/malloc/calloc.lo obj/src/malloc/libc_calloc.o obj/src/malloc/libc_calloc.lo obj/src/malloc/lite_malloc.o obj/src/malloc/lite_malloc.lo: CFLAGS_ALL += -DLIBC_CALLOC_EXTERNAL
+
+MIMALLOC_NM = $(shell $(CC) -print-prog-name=nm)
+MIMALLOC_OBJCOPY = $(shell $(CC) -print-prog-name=objcopy)
+MIMALLOC_GLOBAL_SYMBOLS = malloc aligned_alloc malloc_usable_size \
+	__libc_malloc_impl __libc_calloc __libc_free __libc_realloc __malloc_donate \
+	__malloc_init __malloc_process_cleanup __malloc_thread_cleanup
+MIMALLOC_LOCALIZE = \
+	$(MIMALLOC_NM) -g --defined-only $@ | awk -v keep='$(MIMALLOC_GLOBAL_SYMBOLS)' 'BEGIN { n=split(keep, names, " "); for (i=1; i<=n; i++) keep_name[names[i]]=1 } NF && !keep_name[$$NF] { print $$NF }' > $@.symbols && \
+	$(MIMALLOC_OBJCOPY) --localize-symbols=$@.symbols $@ && \
+	rm -f $@.symbols
+
+obj/src/malloc/mimalloc/malloc.o: $(srcdir)/src/malloc/mimalloc/malloc.c $(GENH) $(IMPH) $(CONFIG_DEP) $(MIMALLOC_DEPS)
+	$(CC_CMD)
+	$(MIMALLOC_LOCALIZE)
+
+obj/src/malloc/mimalloc/malloc.lo: $(srcdir)/src/malloc/mimalloc/malloc.c $(GENH) $(IMPH) $(CONFIG_DEP) $(MIMALLOC_DEPS)
+	$(CC_CMD)
+	$(MIMALLOC_LOCALIZE)
+endif
+
 CC_CMD = $(CC) $(CFLAGS_ALL) -c -o $@ $<
 CONFIG_DEP = $(wildcard config.mak)
 

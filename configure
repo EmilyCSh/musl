@@ -36,7 +36,7 @@ Optional features:
   --disable-static        inhibit building static library [enabled]
 
 Optional packages:
-  --with-malloc=...       choose malloc implementation [mallocng]
+  --with-malloc=...       choose malloc implementation [mimalloc]
   --with-libxcrypt        use libxcrypt for password hashing [enabled]
   --without-libxcrypt     use the built-in musl crypt implementation
 
@@ -144,7 +144,7 @@ static=yes
 wrapper=auto
 gcc_wrapper=no
 clang_wrapper=no
-malloc_dir=mallocng
+malloc_dir=mimalloc
 libxcrypt=yes
 
 for arg ; do

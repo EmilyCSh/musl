@@ -1821,6 +1821,7 @@ void __dls3(size_t *sp, size_t *auxv)
 
 	/* Activate error handler function */
 	error = error_impl;
+	__malloc_init();
 
 	/* If the main program was already loaded by the kernel,
 	 * AT_PHDR will point to some location other than the dynamic
@@ -2025,7 +2026,13 @@ void __dls3(size_t *sp, size_t *auxv)
 	/* Actual copying to new TLS needs to happen after relocations,
 	 * since the TLS images might have contained relocated addresses. */
 	if (initial_tls != builtin_tls) {
-		if (__init_tp(__copy_tls(initial_tls)) < 0) {
+		pthread_t self = __pthread_self();
+		pthread_t new = __copy_tls(initial_tls);
+		new->malloc_heap = self->malloc_heap;
+		new->malloc_heap_cached = self->malloc_heap_cached;
+		new->malloc_tls = self->malloc_tls;
+		new->malloc_tls_fast = self->malloc_tls_fast;
+		if (__init_tp(new) < 0) {
 			a_crash();
 		}
 	} else {

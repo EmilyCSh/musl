@@ -13,6 +13,7 @@ static void dummy_0()
 weak_alias(dummy_0, __acquire_ptc);
 weak_alias(dummy_0, __release_ptc);
 weak_alias(dummy_0, __pthread_tsd_run_dtors);
+weak_alias(dummy_0, __malloc_thread_cleanup);
 weak_alias(dummy_0, __do_orphaned_stdio_locks);
 weak_alias(dummy_0, __dl_thread_cleanup);
 weak_alias(dummy_0, __membarrier_init);
@@ -68,6 +69,7 @@ _Noreturn void __pthread_exit(void *result)
 	}
 
 	__pthread_tsd_run_dtors();
+	__malloc_thread_cleanup();
 
 	__block_app_sigs(&set);
 

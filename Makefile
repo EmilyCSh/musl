@@ -18,6 +18,8 @@ libdir = $(prefix)/lib
 syslibdir = /lib
 
 MALLOC_DIR = mallocng
+WITH_ERROR = yes
+WITH_FTS = yes
 SRC_DIRS = $(addprefix $(srcdir)/,src/* src/malloc/$(MALLOC_DIR) crt ldso $(COMPAT_SRC_DIRS))
 BASE_GLOBS = $(addsuffix /*.c,$(SRC_DIRS))
 ARCH_GLOBS = $(addsuffix /$(ARCH)/*.[csS],$(SRC_DIRS))
@@ -77,6 +79,19 @@ LDSO_PATHNAME = $(syslibdir)/ld-musl-$(ARCH)$(SUBARCH).so.1
 
 -include config.mak
 -include $(srcdir)/arch/$(ARCH)/arch.mak
+
+ifeq ($(WITH_ERROR),no)
+BASE_SRCS := $(filter-out $(srcdir)/compat/error.c,$(BASE_SRCS))
+endif
+ifeq ($(WITH_FTS),no)
+BASE_SRCS := $(filter-out $(srcdir)/compat/fts.c,$(BASE_SRCS))
+endif
+ifeq ($(WITH_ERROR),no)
+ALL_INCLUDES := $(filter-out include/error.h,$(ALL_INCLUDES))
+endif
+ifeq ($(WITH_FTS),no)
+ALL_INCLUDES := $(filter-out include/fts.h,$(ALL_INCLUDES))
+endif
 
 ifeq ($(WITH_LIBXCRYPT),yes)
 AOBJS := $(filter-out obj/src/crypt/crypt.o obj/src/crypt/crypt_r.o obj/src/crypt/encrypt.o obj/src/crypt/setkey.o obj/src/crypt/crypt.lo obj/src/crypt/crypt_r.lo obj/src/crypt/encrypt.lo obj/src/crypt/setkey.lo,$(AOBJS)) obj/libxcrypt/libxcrypt.o

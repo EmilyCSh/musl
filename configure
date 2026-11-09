@@ -32,6 +32,8 @@ Optional features:
   --enable-debug          build with debugging information [disabled]
   --disable-warnings      build with recommended warnings flags [enabled]
   --enable-wrapper=...    build given musl toolchain wrapper [auto]
+  --enable-error/--disable-error  build/omit the error functions [enabled]
+  --enable-fts/--disable-fts      build/omit file tree traversal [enabled]
   --disable-shared        inhibit building shared library [enabled]
   --disable-static        inhibit building static library [enabled]
 
@@ -146,6 +148,8 @@ gcc_wrapper=no
 clang_wrapper=no
 malloc_dir=mimalloc
 libxcrypt=yes
+error=yes
+fts=yes
 
 for arg ; do
 case "$arg" in
@@ -178,6 +182,10 @@ case "$arg" in
 --with-malloc=*) malloc_dir=${arg#*=} ;;
 --with-libxcrypt) libxcrypt=yes ;;
 --without-libxcrypt) libxcrypt=no ;;
+--enable-error|--enable-error=yes) error=yes ;;
+--disable-error|--enable-error=no) error=no ;;
+--enable-fts|--enable-fts=yes) fts=yes ;;
+--disable-fts|--enable-fts=no) fts=no ;;
 --enable-*|--disable-*|--with-*|--without-*|--*dir=*) ;;
 --host=*|--target=*) target=${arg#*=} ;;
 --build=*) build=${arg#*=} ;;
@@ -836,6 +844,8 @@ TOOL_LIBS = $tool_libs
 ADD_CFI = $ADD_CFI
 MALLOC_DIR = $malloc_dir
 COMPAT_SRC_DIRS = compat
+WITH_ERROR = $error
+WITH_FTS = $fts
 WITH_LIBXCRYPT = $libxcrypt
 EOF
 test "x$static" = xno && echo "STATIC_LIBS ="

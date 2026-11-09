@@ -8,7 +8,8 @@
 #include "pthread_impl.h"
 
 #define MI_TLS_MODEL_MUSL 1
-#define MI_PRIM_THREAD_ID() ((uintptr_t)__pthread_self()->tid << 2)
+/* mimalloc reserves IDs 0, 4 and 8 for page and heap states. */
+#define MI_PRIM_THREAD_ID() (((uintptr_t)__pthread_self()->tid + 2) << 2)
 #define MI_PRIM_HAS_PROCESS_ATTACH 1
 #undef PAGE_SIZE
 #undef weak
